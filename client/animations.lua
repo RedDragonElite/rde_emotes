@@ -78,8 +78,14 @@ end
 
 local function DetachProp()
     if AnimState.prop and DoesEntityExist(AnimState.prop) then
-        DeleteObject(AnimState.prop)
-        AnimState.prop = nil
+        local prop = AnimState.prop
+        AnimState.prop = nil -- Referenz sofort clearen, bevor irgendwas dazwischenfunken kann
+        SetEntityAsMissionEntity(prop, true, true)
+        DetachEntity(prop, true, false)
+        DeleteEntity(prop)
+        if DoesEntityExist(prop) then
+            DeleteObject(prop) -- Fallback falls DeleteEntity nicht greift
+        end
     end
 end
 
@@ -158,13 +164,13 @@ function Anim_Stop()
     if not AnimState.active then return end
     local ped = cache.ped
 
-    if AnimState.active.type == 'scenario' then
-        ClearPedTasks(ped)
-    else
-        ClearPedTasks(ped)
-    end
-
+    -- WICHTIG: Prop ZUERST löschen, bevor ClearPedTasks die Anim abbricht.
+    -- Sonst "wirft" die Engine bei manchen Anims (z.B. Gitarre) das Prop
+    -- physisch in die Welt statt es sauber zu despawnen.
     DetachProp()
+
+    ClearPedTasks(ped)
+
     LocalPlayer.state:set('rde_emt_emote', nil, true)
     Log('Stopped: ' .. AnimState.active.id)
     AnimState.active = nil
@@ -199,6 +205,45 @@ if Config.CancelOnMove then
         end
     end)
 end
+
+-- ─── Cleanup: Tod, Resource-Stop, Disconnect ──
+
+-- ox_core feuert dieses Event auch wenn ox:deathSystem deaktiviert ist
+AddEventHandler('ox:playerDeath', function()
+    if AnimState.active then
+        Log('Player died — forcing emote/prop cleanup', 'WARN')
+        Anim_Stop()
+    end
+end)
+
+-- Fallback falls ox_core's death event aus irgendeinem Grund nicht feuert
+-- (z.B. anderes Death-Framework auf dem Server)
+AddEventHandler('baseevents:onPlayerDied', function()
+    if AnimState.active then
+        Log('Player died (baseevents) — forcing emote/prop cleanup', 'WARN')
+        Anim_Stop()
+    end
+end)
+
+AddEventHandler('onResourceStop', function(name)
+    if name ~= GetCurrentResourceName() then return end
+    -- Resource wird neu gestartet/gestoppt während ein Prop aktiv war —
+    -- ohne das hier würde das Objekt für immer in der Welt hängen bleiben.
+    DetachProp()
+end)
+
+-- Sicherheitsnetz: alle paar Minuten prüfen ob ein "verwaistes" Prop
+-- existiert obwohl kein Emote mehr aktiv ist (z.B. durch Edge Cases wie
+-- Ragdoll, Vehicle-Enter, Cutscenes, die ClearPedTasks umgehen können)
+CreateThread(function()
+    while true do
+        Wait(120000) -- alle 2 Minuten
+        if not AnimState.active and AnimState.prop and DoesEntityExist(AnimState.prop) then
+            Log('Orphaned prop detected with no active emote — cleaning up', 'WARN')
+            DetachProp()
+        end
+    end
+end)
 
 -- ─── Andere Spieler: StateBag Handler ─────────
 
