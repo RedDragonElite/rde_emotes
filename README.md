@@ -10,6 +10,8 @@
 
 > **487 validated native GTA5 emotes, on-demand loading, live preview camera, and a drop-in custom pack system.** Built by [Red Dragon Elite](https://rd-elite.com) — Free Forever. No Paywalls. No Gatekeepers.
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a7ed39a9-dfa0-49ea-8968-a884843455ee" />
+
 ---
 
 ## 🔥 What is rde_emotes?
