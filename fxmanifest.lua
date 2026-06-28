@@ -5,7 +5,7 @@ lua54 'yes'
 name        'rde_emotes'
 author      'Red Dragon Elite | SerpentsByte'
 description 'Full GTA5 Emote System — On-demand, Live Preview, StateBag Sync, Custom Pack Support'
-version     '1.0.0'
+version     '1.0.1'
 
 dependencies {
     '/server:7290',
@@ -34,6 +34,7 @@ client_scripts {
     'client/animations.lua',
     'client/preview.lua',
     'client/client.lua',
+    'client/gestures.lua',   -- Fingerzeigen (B) + Crouch/Prone/Stand (STRG) — v1.0.1
 }
 
 ui_page 'html/index.html'

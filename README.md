@@ -1,6 +1,6 @@
 # 🎭 RDE Emotes — Full GTA5 Emote System
 
-[![Version](https://img.shields.io/badge/version-1.0.0-red?style=for-the-badge)](https://github.com/RedDragonElite/rde_emotes)
+[![Version](https://img.shields.io/badge/version-1.0.1-red?style=for-the-badge)](https://github.com/RedDragonElite/rde_emotes)
 [![License](https://img.shields.io/badge/license-RDE%20Black%20Flag-black?style=for-the-badge)](https://github.com/RedDragonElite/rde_emotes/blob/main/LICENSE)
 [![Framework](https://img.shields.io/badge/Framework-ox__core-blue?style=for-the-badge)](https://github.com/overextended/ox_core)
 [![ox_lib](https://img.shields.io/badge/UI-ox__lib-purple?style=for-the-badge)](https://github.com/overextended/ox_lib)
@@ -10,13 +10,17 @@
 
 > **487 validated native GTA5 emotes, on-demand loading, live preview camera, and a drop-in custom pack system.** Built by [Red Dragon Elite](https://rd-elite.com) — Free Forever. No Paywalls. No Gatekeepers.
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a7ed39a9-dfa0-49ea-8968-a884843455ee" />
-
 ---
 
 ## 🔥 What is rde_emotes?
 
 **rde_emotes** is a complete, production-ready emote system for FiveM servers running **ox_core**. 487 native GTA5 animations across 10 categories, a cinematic live-preview camera so you see the emote on your own character before you play it, full multiplayer sync via StateBags, and a custom pack system that lets you drop in your own animations — `.lua` for the data, `.ycd` for the stream — without touching a single line of core code.
+
+As of **v1.0.1**, three essential RP gestures are built directly into the resource — no extra script required:
+
+- 🫵 **Finger Point** (`B`) — GTA:O native mp_pointing task with full directional tracking and wall-collision awareness
+- 🦆 **Crouch / Stand** (`CTRL`) — movement clipset toggle with StateBag sync so everyone sees your stance
+- 💀 **Ragdoll** (`G`) — fall down / get up toggle with auto-reset when the ped settles
 
 ### Why this changes everything
 
@@ -28,11 +32,20 @@
 | Manual categorization for every emote      | ✅ Auto-categorized by keyword detection                        |
 | ESX-era / legacy framework dependency      | ✅ Pure ox_core — zero legacy code                               |
 | Static, hardcoded animation list           | ✅ 487 validated native anims + unlimited custom packs           |
-| Single anim type (TaskPlayAnim only)       | ✅ Dual playback — TaskPlayAnim **and** TaskStartScenarioInPlace |
+| Gestures are a separate resource           | ✅ Finger point, crouch, ragdoll built in — StateBag synced     |
 
 ---
 
 ## 📋 Changelog
+
+### v1.0.1 — Gesture System
+
+- 🆕 **Finger Point** (`B`) — native GTA:O `task_mp_pointing` with camera pitch/heading tracking and wall-collision raycast. All other players see the direction you point in real time (native GTA network sync)
+- 🆕 **Crouch / Stand toggle** (`CTRL`) — `move_ped_crouched` clipset, StateBag synced via `rde_emt_gesture` so all nearby players see your stance
+- 🆕 **Ragdoll toggle** (`G`) — `SetPedToRagdoll` with auto-reset when ped settles. GTA native network sync handles other-player visibility
+- 🔧 All gestures live in `client/gestures.lua` — isolated from the emote engine, zero coupling
+- 🔧 Two new config keys: `Config.PointKey` (`b`) and `Config.RagdollKey` (`g`) — fully rebindable via FiveM Settings → Key Bindings → FiveM
+- 🔧 `/fp` debug command for testing finger point logic independently of keybind state
 
 ### v1.0.0 — Initial Release
 
@@ -60,6 +73,29 @@
 - **Cancel-on-move** safety — moving more than 0.5m auto-stops looping emotes
 - Native GTA prop attachment — bone, offset, and rotation support
 
+### 🫵 Gesture System (v1.0.1)
+
+Three essential RP gestures, StateBag synced, no extra resource:
+
+**Finger Point (`B`)**
+- GTA:O native `task_mp_pointing` — the same pointing system used in GTA Online
+- Full camera pitch and heading tracking — the finger follows exactly where you look
+- Wall-collision raycast — the finger stops naturally before walls and objects
+- Per-frame direction updates while active, drops to `Wait(250)` idle when not pointing
+- Native GTA network task — all players see the pointing direction automatically
+
+**Crouch / Stand (`CTRL`)**
+- `move_ped_crouched` movement clipset — player can walk while crouched
+- Intercepts `INPUT_DUCK` (control 36) directly — GTA's native duck behavior is replaced
+- StateBag sync via `rde_emt_gesture` — all nearby players see your crouch in real time
+- Auto-stand when entering a vehicle or dying
+
+**Ragdoll (`G`)**
+- `SetPedToRagdoll` — character falls and physics-simulates until settled
+- Auto-reset when the ped settles (`IsPedRagdoll` poll at `Wait(250)`)
+- Press `G` again to force-stand before the timer expires
+- GTA native ragdoll physics are network-synced — no extra StateBag needed
+
 ### 📷 Live Preview Camera
 
 - Cinematic orbit camera around your own character while the menu is open
@@ -68,7 +104,8 @@
 
 ### 🌐 Multiplayer Sync
 
-- StateBag-based emote broadcast (`rde_emt_emote`) — other players see you in real time
+- StateBag-based emote broadcast (`rde_emt_emote`) — other players see your emotes in real time
+- StateBag-based gesture broadcast (`rde_emt_gesture`) — other players see your crouch stance
 - Zero polling — fully event-driven via `AddStateBagChangeHandler`
 - Automatic cleanup on emote stop, logout, or disconnect
 
@@ -85,19 +122,6 @@
 - **Auto-categorization** by keyword detection — no manual category assignment required
 - Full validation with clear F8 console warnings for malformed entries
 - ID-conflict detection — last-loaded pack wins, with a console warning
-
-### 🔍 Search & UI
-
-- Full-text search across label, ID, and custom tags
-- 10 categories with live emote counts
-- Flat RDE dark theme — no gradients, no bloat, just clean UI
-
-### 🔒 Security & Performance
-
-- Rate-limited favorite add/remove requests (500ms cooldown per player)
-- Prepared SQL statements with `UNIQUE KEY` dedup on the favorites table
-- Strict input validation on all custom emote IDs (`^[%w_]+$` only)
-- Zero `Wait()` calls inside NetEvent handlers
 
 ---
 
@@ -117,13 +141,13 @@ ensure rde_emotes
 | [ox_core](https://github.com/communityox/ox_core)    | ✅ Required | Player/character framework             |
 | [ox_lib](https://github.com/communityox/ox_lib)      | ✅ Required | Callbacks, notifications, keybind helpers |
 
-> **Note:** rde_emotes requires FiveM server build `≥ 7290` (declared in `fxmanifest.lua`) — StateBag broadcasting requires OneSync and modern server builds.
+> **Note:** rde_emotes requires FiveM server build `≥ 7290`. StateBag broadcasting requires OneSync and modern server builds.
 
 ---
 
 ## 🚀 Installation
 
-```
+```bash
 # 1. Clone into your resources folder
 cd resources
 git clone https://github.com/RedDragonElite/rde_emotes.git
@@ -136,14 +160,14 @@ ensure ox_lib
 ensure ox_core
 ensure rde_emotes
 ```
+
 > **Order matters.** `rde_emotes` must start **after** all its dependencies.
 
 ### Database
 
-No manual SQL import strictly needed — the favorites table is auto-created on first start. If you prefer to run it manually:
+No manual SQL import needed — the favorites table is auto-created on first start. If you prefer to run it manually:
 
 ```sql
--- sql/rde_emotes.sql
 CREATE TABLE IF NOT EXISTS `rde_emotes_favorites` (
     `id`         INT          NOT NULL AUTO_INCREMENT,
     `char_id`    VARCHAR(64)  NOT NULL,
@@ -160,32 +184,31 @@ CREATE TABLE IF NOT EXISTS `rde_emotes_favorites` (
 Edit `config.lua`:
 
 ```lua
-Config.MenuKey      = 'F4'    -- Open/close the emote menu
-Config.StopKey       = 'X'     -- Instantly stop the current emote
-Config.MaxFavorites  = 30      -- Max favorites per character
-Config.DictUnloadDelay = 60000 -- Auto-unload idle dicts (ms), 0 = never
-Config.CancelOnMove  = true    -- Auto-stop looping emotes on movement
-Config.Debug         = false   -- Dev debug logging
-```
-
-```
-# 5. Restart & Test
-refresh
-restart rde_emotes
+Config.MenuKey         = 'F4'    -- Open/close the emote menu
+Config.StopKey         = 'X'     -- Instantly stop the current emote
+Config.PointKey        = 'b'     -- Finger point toggle (rebindable in FiveM settings)
+Config.RagdollKey      = 'g'     -- Ragdoll toggle (rebindable in FiveM settings)
+Config.MaxFavorites    = 30      -- Max favorites per character
+Config.DictUnloadDelay = 60000   -- Auto-unload idle dicts (ms), 0 = never
+Config.CancelOnMove    = true    -- Auto-stop looping emotes on movement
+Config.Debug           = false   -- Dev debug logging
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-All configuration lives in `config.lua`. Key settings:
-
 ### Keybinds
 
-```lua
-Config.MenuKey = 'F4'   -- Toggle emote menu
-Config.StopKey = 'X'    -- Stop current emote, no menu required
-```
+| Key    | Action                          | Rebindable |
+| ------ | -------------------------------- | ---------- |
+| `F4`   | Toggle emote menu                | ✅ FiveM Settings |
+| `X`    | Stop current emote               | ✅ FiveM Settings |
+| `B`    | Finger point toggle              | ✅ FiveM Settings |
+| `G`    | Ragdoll toggle                   | ✅ FiveM Settings |
+| `CTRL` | Crouch / Stand toggle            | ❌ Fixed (intercepts INPUT_DUCK) |
+
+All `RegisterKeyMapping` binds can be rebound per-player in **FiveM Settings → Key Bindings → FiveM**.
 
 ### Preview Camera
 
@@ -194,16 +217,8 @@ Config.PreviewCam = {
     fov          = 45.0,
     distance     = 2.2,
     heightOffset = 0.15,
-    rotateSpeed  = 0.8,   -- Auto-rotation speed in the preview
+    rotateSpeed  = 0.8,
 }
-```
-
-### Favorites & Memory
-
-```lua
-Config.MaxFavorites    = 30      -- Per-character cap
-Config.DictUnloadDelay = 60000   -- ms before idle AnimDicts unload (0 = never)
-Config.CancelOnMove    = true    -- Cancel loops on player movement
 ```
 
 ---
@@ -212,24 +227,27 @@ Config.CancelOnMove    = true    -- Cancel loops on player movement
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
+│  EMOTE SYSTEM                                                    │
 │  1. PLAYER PRESSES F4         Menu opens, preview camera starts  │
 │  2. HOVER EMOTE CARD          Preview_PlayEmote() on local ped   │
 │  3. CLICK TO PLAY             RequestAnimDict() if not loaded    │
 │  4. TaskPlayAnim / Scenario   Animation starts locally           │
 │  5. STATEBAG SET              rde_emt_emote broadcast (true)     │
 │  6. OTHER CLIENTS             AddStateBagChangeHandler fires      │
-│                                 → load dict → TaskPlayAnim         │
 │  7. IDLE TIMEOUT (60s)        RemoveAnimDict() — memory freed    │
+├──────────────────────────────────────────────────────────────────┤
+│  GESTURE SYSTEM (v1.0.1)                                         │
+│  CTRL pressed  → SetPedMovementClipset(move_ped_crouched)        │
+│                → StateBag rde_emt_gesture = {type='crouch'}      │
+│                → Other clients load clipset and apply            │
+│  B pressed     → task_mp_pointing via GTA native network task    │
+│  G pressed     → SetPedToRagdoll — GTA native network sync       │
 └──────────────────────────────────────────────────────────────────┘
 ```
-
-**Why this matters:** Generic emote scripts load every single animation dictionary at resource start and keep them in memory for the entire session — that's the multi-MiB baseline you see sitting permanently in `resmon`. rde_emotes loads a dict **only at the moment it's triggered**, and unloads it again after a configurable idle period. Your server's idle memory footprint for emotes is effectively zero.
 
 ---
 
 ## 🧩 Custom Pack System — Deep Dive
-
-Drop a `.lua` file into `data/custom/` and call `AddCustomEmotes()`:
 
 ```lua
 -- data/custom/my_pack.lua
@@ -237,21 +255,17 @@ AddCustomEmotes({
     {
         id       = 'my_dance',
         label    = 'My Custom Dance',
-        type     = 'anim',              -- 'anim' or 'scenario'
+        type     = 'anim',
         dict     = 'my_dict@',
         clip     = 'my_clip_name',
         loop     = true,
-        category = 'dance',             -- optional — auto-detected if omitted
+        category = 'dance',
         tags     = { 'dance', 'custom' },
     },
 })
 ```
 
-Drop your matching `.ycd` stream files into `stream/[Your Pack Name]/` — FiveM streams them automatically, no `fxmanifest.lua` edits required.
-
-**On load**, every entry is validated (`id`, `label`, and either `dict`+`clip` or `scenario` required), auto-categorized via keyword detection if no `category` is given, and registered into the same lookup tables as the native emotes — fully indistinguishable in the UI except for an internal `custom = true` flag for future filtering.
-
-Full format reference, prop examples, and category keyword tables live in [`data/custom/README.md`](data/custom/README.md).
+Drop your `.ycd` stream files into `stream/[Your Pack Name]/` — FiveM streams them automatically.
 
 ---
 
@@ -259,36 +273,24 @@ Full format reference, prop examples, and category keyword tables live in [`data
 
 ### For Players
 
-**Opening the menu:**
-1. Press `F4` (configurable)
-2. Browse by category or search by name
-3. Hover any emote to preview it on your own character
-4. Click to play
-
-**Stopping an emote:**
-- Press `X` (configurable) — works instantly, no menu required
-- Or click "Emote stoppen" inside the menu
-- Or run `/stopemote`
-
-**Favorites:**
-- Click the heart icon on any emote card
-- Access your favorites from the dedicated sidebar tab
+| Action | How |
+| ------ | --- |
+| Open emote menu | `F4` |
+| Preview emote | Hover any card in the menu |
+| Play emote | Click the card |
+| Stop emote | `X` or `/stopemote` |
+| Finger point | `B` (toggle) |
+| Crouch / Stand | `CTRL` (toggle) |
+| Ragdoll / Get up | `G` (toggle) |
 
 ### Commands
 
-| Command           | Description                                  |
-| ------------------ | --------------------------------------------- |
-| `/e`               | Opens the emote menu                          |
-| `/e <id>`          | Plays a specific emote directly, no menu      |
-| `/stopemote`       | Stops the currently playing emote             |
-
-### Keybinds
-
-| Key  | Action                          |
-| ---- | -------------------------------- |
-| `F4` | Toggle emote menu                |
-| `X`  | Stop current emote               |
-| `ESC`| Close menu (while open)          |
+| Command       | Description                             |
+| -------------- | ---------------------------------------- |
+| `/e`           | Open emote menu                         |
+| `/e <id>`      | Play emote directly by ID               |
+| `/stopemote`   | Stop current emote                      |
+| `/fp`          | Debug: trigger finger point (bypasses keybind) |
 
 ---
 
@@ -297,24 +299,11 @@ Full format reference, prop examples, and category keyword tables live in [`data
 ### Public Functions (client-side)
 
 ```lua
-Anim_Play(emote)       -- Plays an emote table directly
-Anim_Stop()             -- Stops the currently active emote
-Anim_IsPlaying()        -- Returns true/false
-Anim_GetActive()        -- Returns the active emote table, or nil
+Anim_Play(emote)    -- Play an emote table directly
+Anim_Stop()          -- Stop the currently active emote
+Anim_IsPlaying()     -- Returns true/false
+Anim_GetActive()     -- Returns the active emote table, or nil
 ```
-
-### Registering Custom Emotes
-
-```lua
-AddCustomEmotes({
-    {
-        id = 'wave_custom', label = 'Custom Wave', type = 'anim',
-        dict = 'my_dict@', clip = 'wave_clip', loop = false,
-    },
-})
-```
-
-See [`data/custom/README.md`](data/custom/README.md) for the full schema including scenario emotes and prop attachment.
 
 ---
 
@@ -322,11 +311,10 @@ See [`data/custom/README.md`](data/custom/README.md) for the full schema includi
 
 ```
 Resource: rde_emotes
-├─ Idle:     0.00 ms (no AnimDicts loaded)
-├─ Active:   0.01–0.03 ms (per emote, dict loaded)
+├─ Idle:     0.00 ms  (no AnimDicts loaded, gestures at Wait(250–500) idle)
+├─ Active:   0.01–0.03 ms  (emote playing or finger pointing)
 ├─ Memory:   0 MB baseline → ~50–300 KB per loaded dict (auto-unloaded)
-├─ Threads:  Dynamic — cleaned up after idle timeout
-└─ Network:  Single StateBag write per emote start/stop, zero polling
+└─ Network:  Single StateBag write per emote/gesture change, zero polling
 ```
 
 ---
@@ -335,58 +323,56 @@ Resource: rde_emotes
 
 ```
 rde_emotes/
-├── fxmanifest.lua          ← Resource manifest, wildcard custom pack loading
-├── config.lua              ← Keybinds, categories, locales, all settings
+├── fxmanifest.lua           ← Resource manifest
+├── config.lua               ← All settings, keybinds, locales
 ├── data/
-│   ├── emotes.lua          ← 487 validated native emotes + AddCustomEmotes API
-│   └── custom/              ← Drop your custom .lua packs here (empty by default)
-│       └── README.md       ← Full custom pack format reference
+│   ├── emotes.lua           ← 487 validated native emotes + AddCustomEmotes API
+│   └── custom/              ← Drop your custom .lua packs here
+│       └── README.md        ← Custom pack format reference
 ├── client/
-│   ├── animations.lua      ← On-demand dict loading, TaskPlayAnim/Scenario, StateBag sync
-│   ├── preview.lua         ← Live orbit camera system
-│   └── client.lua          ← NUI bridge, commands, keybinds, favorites
+│   ├── animations.lua       ← On-demand dict loading, TaskPlayAnim, StateBag sync
+│   ├── preview.lua          ← Live orbit camera system
+│   ├── client.lua           ← NUI bridge, commands, keybinds, favorites
+│   └── gestures.lua         ← 🆕 Finger point (B), Crouch/Stand (CTRL), Ragdoll (G)
 ├── server/
-│   └── server.lua          ← Favorites persistence, validation, rate limiting
-├── html/                   ← NUI (index.html, css, js)
-├── stream/                  ← Drop your custom .ycd files here (empty by default)
-├── sql/rde_emotes.sql      ← Database schema
-├── LICENSE                 ← RDE Black Flag Source License v6.66
-└── README.md               ← You are here
+│   └── server.lua           ← Favorites persistence, validation, rate limiting
+├── html/                    ← NUI (index.html, css, js)
+├── sql/rde_emotes.sql       ← Database schema
+├── LICENSE                  ← RDE Black Flag Source License v6.66
+└── README.md                ← You are here
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-**Menu doesn't open?**
-Check F8 console for `[RDE EMOTES]` errors. Make sure `ox_core`, `ox_lib`, and `oxmysql` are started **before** `rde_emotes` in `server.cfg`.
+**Finger point not responding to `B`?**
+Check **FiveM Settings → Key Bindings → FiveM** → search "Point finger". The keybind registers on first resource start — if it's blank, assign `B` manually. Use `/fp` in chat to verify the logic itself works.
 
-**Keybind not working?**
-`F4` or `X` might already be remapped by another resource or your own FiveM settings. Check **FiveM Settings → Key Bindings → FiveM** and search for "Emote".
+**Crouch doesn't sync to other players?**
+Ensure OneSync is enabled on the server. The `rde_emt_gesture` StateBag requires OneSync to broadcast to nearby clients.
+
+**Menu doesn't open?**
+Check F8 console for `[RDE EMOTES]` errors. Confirm `ox_core`, `ox_lib`, and `oxmysql` start **before** `rde_emotes` in `server.cfg`.
 
 **Custom pack not loading?**
-- Confirm the file sits directly in `data/custom/` and ends in `.lua`
-- Check F8 for `[RDE EMOTES] Custom pack loaded: X added, Y skipped`
-- Validate that your `dict`/`clip` names exactly match your `.ycd` file contents
+Confirm the file sits in `data/custom/` and ends in `.lua`. Check F8 for `[RDE EMOTES] Custom pack loaded: X added, Y skipped`.
 
 **Favorites not saving?**
-Verify `rde_emotes_favorites` exists (auto-created on first start) and that the character is fully loaded (`ox:playerLoaded` has fired).
-
-**Animation looks wrong / T-pose?**
-The `dict`/`clip` pair is invalid for that resource's GTA5 build, or the AnimDict failed to load in time. Enable `Config.Debug = true` and check F8 for `AnimDict timeout` warnings.
+Verify `rde_emotes_favorites` table exists and that `ox:playerLoaded` has fired for the character.
 
 ---
 
 ## 🗺️ Roadmap
 
-### Planned for v2.0
+### Planned
 
+- [ ] Prone / crawl animation (needs suitable anim dict — in research)
 - [ ] Shared/synced emotes — 2-player interactions (hugs, handshakes, dances)
-- [ ] Radial emote wheel for quick access without the full menu
+- [ ] Radial emote wheel for quick access
 - [ ] Per-emote sound effects
 - [ ] Animation playback speed control
-- [ ] Mood/facial expression layering while emoting
-- [ ] In-menu prop color picker
+- [ ] Mood/facial expression layering
 
 Have a feature request? [Open a Discussion](https://github.com/RedDragonElite/rde_emotes/discussions).
 
@@ -395,8 +381,6 @@ Have a feature request? [Open a Discussion](https://github.com/RedDragonElite/rd
 ## 📜 License
 
 **RDE Black Flag Source License v6.66** — see [LICENSE](https://github.com/RedDragonElite/rde_emotes/blob/main/LICENSE)
-
-**TL;DR:**
 
 - ✅ Free to use, edit, and learn from — forever
 - ✅ Keep the header / credit the creator
@@ -407,13 +391,13 @@ Have a feature request? [Open a Discussion](https://github.com/RedDragonElite/rd
 
 ## 🌐 Community & Links
 
-|                    |                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| 🐙 GitHub           | [github.com/RedDragonElite](https://github.com/RedDragonElite)                                      |
-| 🌍 Website          | [rd-elite.com](https://rd-elite.com)                                                                |
-| 🔵 Nostr            | [SerpentsByte](https://nostr.band/npub1wr4e24zn6zzjqx8kvnelfvktf0pu6l2gx4gvw06zead2eqyn23sq9tsd94)  |
-| ⚡ rde_nostr_log    | [Decentralized Logging](https://github.com/RedDragonElite/rde_nostr_log)                            |
-| 📖 OX Standards     | [rde_ox_standards](https://github.com/RedDragonElite/rde_ox_standards)                              |
+|                   |                                                                   |
+| ------------------ | ------------------------------------------------------------------ |
+| 🐙 GitHub          | [github.com/RedDragonElite](https://github.com/RedDragonElite)    |
+| 🌍 Website         | [rd-elite.com](https://rd-elite.com)                              |
+| ✈️ Telegram        | [RedDragonElite_Official](https://t.me/RedDragonElite_Official)   |
+| ⚡ rde_nostr_log   | [Decentralized Logging](https://github.com/RedDragonElite/rde_nostr_log) |
+| 📖 OX Standards    | [rde_ox_standards](https://github.com/RedDragonElite/rde_ox_standards) |
 
 ---
 

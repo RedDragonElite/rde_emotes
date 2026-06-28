@@ -1,7 +1,7 @@
 Config = {}
 
 Config.Debug             = true
-Config.DefaultLanguage   = 'de'
+Config.DefaultLanguage   = 'en'
 Config.DatabaseTable     = 'rde_emotes_favorites'
 Config.StatebagPrefix    = 'rde_emt_'
 Config.MaxFavorites      = 30
@@ -16,7 +16,9 @@ Config.PreviewCam = {
 
 -- Keybind zum Öffnen des Menüs
 Config.MenuKey = 'F4'
-Config.StopKey = 'X'
+Config.StopKey  = 'X'
+Config.PointKey   = 'b'   -- Fingerzeigen Toggle
+Config.RagdollKey = 'g'   -- Ragdoll Toggle
 
 -- Emote Abbruch bei Bewegung
 Config.CancelOnMove = true
@@ -66,6 +68,11 @@ Config.Locales = {
         loading          = 'Loading animation...',
         no_results       = 'No results for "%s"',
         no_permission    = 'No permission',
+        -- Gesten
+        point_label      = 'Point finger',
+        ragdoll_label    = 'Ragdoll / Fall down',
+        stance_stand     = 'Standing up',
+        stance_crouch    = 'Crouching',
     },
     de = {
         menu_open        = 'Emote Menü',
@@ -80,6 +87,11 @@ Config.Locales = {
         loading          = 'Animation wird geladen...',
         no_results       = 'Keine Ergebnisse für "%s"',
         no_permission    = 'Keine Berechtigung',
+        -- Gesten
+        point_label      = 'Mit dem Finger zeigen',
+        ragdoll_label    = 'Ragdoll / Hinfallen',
+        stance_stand     = 'Steht auf',
+        stance_crouch    = 'Duckt sich',
     },
 }
 
